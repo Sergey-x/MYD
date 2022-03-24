@@ -5,3 +5,4 @@ rn-nodeify for deps ------|
 del maps:
 react-native-maps
 @googlemaps/js-api-loader
+https://github.com/react-native-maps/react-native-maps/blob/1e71a21f39e7b88554852951f773c731c94680c9/docs/installation.md#ios

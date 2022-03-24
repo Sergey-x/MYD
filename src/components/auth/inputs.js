@@ -1,11 +1,13 @@
 import React from "react";
 import { Center, Icon, Input } from "native-base";
-// import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-// import Foundation from "react-native-vector-icons/Foundation";
+import EyeSvg from "../../assets/eyeSvg";
+import EyeOffSvg from "../../assets/eyeOffSvg";
+import KeySvg from "../../assets/KeySvg";
+import EmailSvg from "../../assets/EmailSvg";
+import UserSvg from "../../assets/userSvg";
 
 
 const MARGIN_BETWEEN_INPUTS = 3;
-const ICON_SIZE = 24;
 const ICON_COLOR = "#fff";
 
 
@@ -13,14 +15,7 @@ export function UsernameInput(props) {
     return (
         <Center>
 
-            <Input InputLeftElement={<Icon as={
-                // <MaterialIcons name="person"
-                //                style={{ color: ICON_COLOR }}
-                //                size={ICON_SIZE} />
-              <></>
-            }
-
-            />}
+            <Input InputLeftElement={<Icon as={<UserSvg color={ICON_COLOR} />} />}
                    color={ICON_COLOR}
                    size="lg"
                    my={MARGIN_BETWEEN_INPUTS}
@@ -39,10 +34,7 @@ export function UsernameInput(props) {
 export function EmailInput(props) {
     return (
         <Center>
-            <Input InputLeftElement={
-                // <MaterialIcons name="alternate-email" size={ICON_SIZE} color={ICON_COLOR} />
-              <></>
-            }
+            <Input InputLeftElement={<EmailSvg color={ICON_COLOR} />}
                    color={ICON_COLOR}
                    size="lg"
                    my={MARGIN_BETWEEN_INPUTS}
@@ -66,10 +58,7 @@ export function PasswordInput(props) {
     }
 
     return (
-        <Input InputLeftElement={
-            // <Foundation name="key" size={ICON_SIZE} color={ICON_COLOR} />
-          <></>
-        }
+        <Input InputLeftElement={<KeySvg color={ICON_COLOR} />}
                color={ICON_COLOR}
                size="lg" variant="underlined"
                placeholder={props.placeholder || "Password"}
@@ -79,13 +68,11 @@ export function PasswordInput(props) {
                onChangeText={props.setValue}
                type={show ? "text" : "password"}
                InputRightElement={
-                   <Icon as={
-                       // <MaterialIcons name={show ? "visibility" : "visibility-off"}
-                       //                onPress={handleClick}
-                       //                size={ICON_SIZE}
-                       //                style={{ color: ICON_COLOR }} />
-                     <></>
-                   } />
+                   <Icon onPress={handleClick}
+                         as={
+                             show ? <EyeSvg color={ICON_COLOR} /> : <EyeOffSvg color={ICON_COLOR} />
+                         }
+                   />
                } />
     );
 }

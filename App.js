@@ -7,20 +7,46 @@
  */
 
 
-import type { Node } from "react";
-import React from "react";
-import { Text, View } from "react-native";
+import React, { useEffect } from "react";
+import { NativeBaseProvider } from "native-base";
+import { NavigationContainer } from "@react-navigation/native";
+import AppNavigations from "./src/components/AppNavigations";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { closeDB, openDB } from "./src/db/$realm";
+import { requestWriteExternalStoragePermission } from "./src/permissions/ExternalStorage";
+import { BackHandler } from "react-native";
+import DB from "./src/db/db";
+import { IMAGES_PATH } from "./src/localeFiles/documentDirConfig";
 
 
-const App: () => Node = () => {
+export default function App() {
+  const onOpenApp = () => {
+    openDB();
+    DB.settings.init();
+    DB.playlistLikes.init();
+  };
+
+  const onCloseApp = () => {
+    closeDB();
+    BackHandler.exitApp();
+    return true;
+  };
+
+  useEffect(() => {
+    requestWriteExternalStoragePermission().then(onOpenApp);
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", onCloseApp);
+    console.log(IMAGES_PATH);
+    return () => backHandler.remove();
+  }, []);
+
   return (
-    <View>
-      <Text>
-        Read the docs to discover what to do next:
-      </Text>
-    </View>
+    <SafeAreaProvider>
+      <NativeBaseProvider>
+        <NavigationContainer>
+          <AppNavigations />
+        </NavigationContainer>
+      </NativeBaseProvider>
+    </SafeAreaProvider>
   );
-};
+}
 
-
-export default App;

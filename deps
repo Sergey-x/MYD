@@ -6,3 +6,11 @@ del maps:
 react-native-maps
 @googlemaps/js-api-loader
 https://github.com/react-native-maps/react-native-maps/blob/1e71a21f39e7b88554852951f773c731c94680c9/docs/installation.md#ios
+
+
+parsing:
+react-native-cheerio
+
+img-optim:
+react-native-fast-image - link
+https://github.com/DylanVann/react-native-fast-image/issues/692

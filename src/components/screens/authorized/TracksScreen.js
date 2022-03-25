@@ -20,6 +20,22 @@ export default function TracksScreen(props) {
     const [readyFlag, setReadyFlag] = useState(false);
     const [activeLoadingFlag, setActiveLoadingFlag] = useState(false);
 
+    const findLinksQueue = new Queue({
+        concurrent: 6,
+        interval: 0,
+    });
+
+    findLinksQueue.on("start", () => {
+        setFindingLinksFlag(true);
+    });
+    findLinksQueue.on("end", () => {
+        setFindingLinksFlag(false);
+        DB.playlists.setLoadedFlag(playlistKind);
+    });
+    findLinksQueue.on("stop", () => {
+        setFindingLinksFlag(false);
+    });
+
     const newQueue = new Queue({
         concurrent: DB.settings.get().concurrentLoadTrack,
         interval: 0,
@@ -88,14 +104,17 @@ export default function TracksScreen(props) {
             loadedTracks.forEach(track => {
                 if (track.srcLinks.length === 0) {
                     setFindingLinksFlag(true);
-                    const trackSearch = TrackManager.getSearchString(track);
-                    const promiseLink = HitMOApi.findTrackUrl(trackSearch).then(link => {
-                        if (link && link.toString().startsWith("http")) {
-                            DB.tracks.add(track);
-                            DB.tracks.addLink(track.pk, link);
-                        }
-                    });
-                    findLinksPromises.push(promiseLink);
+
+                    const promiseLinkFunc = () => {
+                        const trackSearch = TrackManager.getSearchString(track);
+                        return HitMOApi.findTrackUrl(trackSearch).then(link => {
+                            if (link && link.toString().startsWith("http")) {
+                                DB.tracks.add(track);
+                                DB.tracks.addLink(track.pk, link);
+                            }
+                        });
+                    };
+                    findLinksQueue.enqueue(promiseLinkFunc);
                 }
             });
 
@@ -106,11 +125,6 @@ export default function TracksScreen(props) {
             //         DB.tracks.delete(trackPK);
             //     }
             // });
-
-            Promise.all(findLinksPromises).then(() => {
-                setFindingLinksFlag(false);
-                DB.playlists.setLoadedFlag(playlistKind);
-            });
         });
     };
 

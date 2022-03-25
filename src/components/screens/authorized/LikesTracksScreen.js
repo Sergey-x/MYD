@@ -13,10 +13,43 @@ import Queue from "queue-promise";
 
 export default function LikesTracksScreen(props) {
     const [tracks, setTracks] = useState([]);
-    const [readyFlag, setReadyFlag] = useState(false);
     const [findingLinksFlag, setFindingLinksFlag] = useState(false);
+    const [readyFlag, setReadyFlag] = useState(false);
+    const [activeLoadingFlag, setActiveLoadingFlag] = useState(false);
 
     const playlistKind = PlaylistLikesManager.PK;
+
+    const findLinksQueue = new Queue({
+        concurrent: 5,
+        interval: 0,
+    });
+
+    findLinksQueue.on("start", () => {
+        setFindingLinksFlag(true);
+    });
+    findLinksQueue.on("end", () => {
+        setFindingLinksFlag(false);
+    });
+    findLinksQueue.on("stop", () => {
+        setFindingLinksFlag(false);
+    });
+
+    const loadTracksQueue = new Queue({
+        concurrent: DB.settings.get().concurrentLoadTrack,
+        interval: 0,
+    });
+
+    loadTracksQueue.on("start", () => {
+        setActiveLoadingFlag(true);
+    });
+
+    loadTracksQueue.on("end", () => {
+        setActiveLoadingFlag(false);
+    });
+
+    loadTracksQueue.on("stop", () => {
+        setActiveLoadingFlag(false);
+    });
 
     // configure header
     React.useLayoutEffect(() => {
@@ -42,19 +75,37 @@ export default function LikesTracksScreen(props) {
                 });
             } else {
                 // если список не менялся
-                populateLikesTracksFromDb();
+                // populateLikesTracksFromDb();
+                console.log("Likes DB");
             }
         });
     };
 
     useEffect(() => {
+        // set state to the initial value of your realm objects
+        const listenTracks = DB.tracks.getByPlaylistKind(playlistKind);
+        setTracks(listenTracks);
+
+        listenTracks.addListener(() => {
+            const updTracks = DB.tracks.getByPlaylistKind(playlistKind).map(track => {
+                track.onLoad = (f) => loadTracksQueue.enqueue(f);
+                return track;
+            });
+            setTracks(updTracks);
+        });
+
         initTracksData();
+
+        return () => {
+            // Remember to remove the listener when you're done
+            listenTracks.removeAllListeners();
+        };
     }, []);
 
-    const populateLikesTracksFromDb = () => {
+/*    const populateLikesTracksFromDb = () => {
         updateTracks(DB.tracks.getByPlaylistKind(playlistKind).filter(item => item));
         console.log("skip downloading tracks for playlistLikes");
-    };
+    };*/
 
     const populateLikesTracksFromApi = (shortTracks) => {
         const fullTracks = [];
@@ -80,47 +131,65 @@ export default function LikesTracksScreen(props) {
         // Когда будут получены все треки - ищем ссылки
         return Promise.all(fullTrackPromises).then(() => {
             let findLinksPromises = [];
-            updateTracks(fullTracks);
+
+            DB.tracks.addMany(fullTracks);
+            setReadyFlag(true);
+
             fullTracks.forEach(track => {
                 if (track.srcLinks.length === 0) {
                     setFindingLinksFlag(true);
 
                     let trackSearch = TrackManager.getSearchString(track);
-                    const findLinkPromise = HitMOApi.findTrackUrl(trackSearch).then(link => {
-                        if (`${link}`.startsWith("http")) {
-                            track.srcLinks.push(link);
-                        }
-                    });
-                    findLinksPromises.push(findLinkPromise);
+
+                    const findLinkPromiseFunc = () => {
+                        return HitMOApi.findTrackUrl(trackSearch).then(link => {
+                            if (`${link}`.startsWith("http")) {
+                                DB.tracks.addLink(track.pk, link);
+                            }
+                        });
+                    };
+
+                    findLinksQueue.enqueue(findLinkPromiseFunc);
                 }
             });
-
-            // Когда все ссылки найдены
-            return Promise.all(findLinksPromises).then(() => {
-                setFindingLinksFlag(false);
-                DB.tracks.addMany(fullTracks);
-            });
         });
     };
 
-    const onLoadTracks = () => {
-        const newQueue = new Queue({
-            concurrent: DB.settings.get().concurrentLoadTrack,
-            interval: 0,
-        });
-
-        const oldTracks = tracks.slice();
-        updateTracks(oldTracks.map(track => {
-            track.onLoadTrack = (func) => newQueue.enqueue(func);
-            track.triggerLoading = true;
+    function onLoadTracks() {
+        const oldTracks = tracks.slice().map(track => {
+            track.onLoad = (f) => loadTracksQueue.enqueue(f);
             return track;
-        }));
-    };
+        });
+
+        setTracks(oldTracks);
+
+        oldTracks.forEach(track => {
+            if (track.srcLinks.length && !track.downloaded) {
+                DB.tracks.setLoading(track.pk);
+            }
+        });
+    }
 
     function renderScreen() {
         return (
             <>
-                <Button mb={3} onPress={onLoadTracks} borderRadius={0}>Load all available tracks</Button>
+                <Button mb={3}
+                        isLoadingText="Downloading"
+                        onPress={onLoadTracks}
+                        borderRadius={0}>
+                    Load all available tracks
+                </Button>
+
+                {
+                    activeLoadingFlag &&
+                    <Button mb={3}
+                            onPress={() => {
+                                loadTracksQueue.stop();
+                            }}
+                            borderRadius={0}>
+                        Cancel downloading
+                    </Button>
+                }
                 {
                     findingLinksFlag &&
                     <Button isLoading

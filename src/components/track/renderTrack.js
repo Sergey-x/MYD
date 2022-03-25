@@ -1,9 +1,9 @@
 import React from "react";
-import Track from "./Track";
+import EmptyTrack from "./EmptyTrack";
 
 
 export default function renderTrack({ item }) {
     return (
-        <Track {...item} />
+        <EmptyTrack {...item} />
     );
 }

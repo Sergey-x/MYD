@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Button, ScrollView, Text, View } from "native-base";
-import { LogBox, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { PasswordInput, UsernameInput } from "../../auth/inputs";
 import YMAPI from "../../../api/ym/initializerYMApi";
 import DB from "../../../db/db";
-
-
-// LogBox.ignoreLogs(["Require cycle:", "Remote debugger"]);
 
 
 export default function ProfileScreen() {
@@ -45,13 +42,13 @@ export default function ProfileScreen() {
 
                 {
                     attached &&
-                        <Button size="md" colorScheme="primary" onPress={() => {
-                            DB.users.delete();
-                            setAttached(false);
-                        }
-                        }>
-                            Detach account
-                        </Button>
+                    <Button size="md" colorScheme="primary" onPress={() => {
+                        DB.users.delete();
+                        setAttached(false);
+                    }
+                    }>
+                        Detach account
+                    </Button>
                 }
 
                 {

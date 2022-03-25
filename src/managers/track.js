@@ -1,5 +1,6 @@
 import replaceAllStr from "../utils/replaceAllStr";
 import DB from "../db/db";
+import HitMOApi from "../api/hitmo/hitmo";
 
 
 export default class TrackManager {
@@ -24,7 +25,7 @@ export default class TrackManager {
 
     static getTruncateArtistsLabel(artists) {
         const MAX_LEN = 25;
-        let artistsStr = artists.join(', ');
+        let artistsStr = artists.join(", ");
         if (artistsStr.length > MAX_LEN) {
             artistsStr = artistsStr.slice(0, MAX_LEN) + "...";
         }
@@ -33,7 +34,7 @@ export default class TrackManager {
 
     static getTimeFromMs(durationMs) {
         const durationS = durationMs / 1000;
-        let min = Math.floor(durationS / 60)
+        let min = Math.floor(durationS / 60);
         let sec = Math.floor(durationS) % 60;
         if (sec < 10) {
             sec = "0" + sec;
@@ -54,7 +55,7 @@ export default class TrackManager {
      * @param {string} id - The real_id of the track in Yandex Music.
      * @param {string} playlistKind - The kind of the playlist.
      */
-    static genTrackPK(id, playlistKind)  {
+    static genTrackPK(id, playlistKind) {
         return `${playlistKind}-${id}`;
     }
 
@@ -70,8 +71,7 @@ export default class TrackManager {
     static getAudioFilename(track) {
         try {
             return track.title + " - " + track.artistList.join(", ") + ".mp3";
-        }
-        catch (e) {
+        } catch (e) {
             return track.title + " - " + track.artistList + ".mp3";
         }
 
@@ -119,20 +119,18 @@ export default class TrackManager {
         };
     }
 
-    /*    static load(track) {
-            if (track.srcLinks.length && !track.downloaded) {
-                console.log("downloading new track...");
+    static load(trackPk) {
+        const track = DB.tracks.get(trackPk);
+        if (track.srcLinks.length && !track.downloaded) {
+            // start loading status
+            DB.tracks.setLoading(trackPk);
+            return HitMOApi.load(track).then(() => {
+                // finish loading status
+                DB.tracks.unsetLoading(trackPk);
 
-                // start loading status
-                DB.tracks.setLoading(track.pk);
-                return HitMOApi.load(props, () => {
-                    // finish loading status
-                    DB.tracks.unsetLoading(track.pk, false);
-
-                    // track was loaded successfully
-                    DB.tracks.setDownloaded(track.pk);
-                });
-            }
-            throw new Error("Can't load this track - it's already loaded or hasn't links");
-        }*/
+                // track was loaded successfully
+                DB.tracks.setDownloaded(trackPk);
+            });
+        }
+    }
 };

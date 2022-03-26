@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import Playlist from "../../playlist/Playlist";
-import DB from "../../../db/db";
-import YmAPI from "../../../api/ym/ym-api";
-import SplashScreen from "./SplashScreen";
 import { useFocusEffect } from "@react-navigation/native";
+
+import DB from "../../../db/db";
+import Playlist from "../../playlist/Playlist";
 import PlaylistLikes from "../../playlist/PlaylistLikes";
 import PlaylistManager from "../../../managers/playlist";
+import SplashScreen from "./SplashScreen";
+import YmAPI from "../../../api/ym/ym-api";
 
 
 const wait = (timeout) => {
@@ -37,14 +38,12 @@ export default function PlaylistsScreen() {
     const populatePlaylistsFromApi = () => {
         // TODO: catch error
         YmAPI.playlists.getShortPlaylists().then(playlists => {
-            console.log("UPD playlists");
             const dbPlaylists = playlists.map(playlist => PlaylistManager.createNew(playlist));
             updatePlaylists(dbPlaylists);
 
             // save playlists in DB
             DB.playlists.addMany(dbPlaylists);
         }).catch(() => {
-            console.log("API error! Load from db...");
             populatePlaylistsFromDB();
         });
     };

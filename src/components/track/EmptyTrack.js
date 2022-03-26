@@ -60,6 +60,7 @@ export default EmptyTrack;
 const styles = StyleSheet.create({
     emptyTrack: {
         trackRow: {
+            height: 50,
             flexDirection: "row",
             justifyContent: "space-between",
             marginVertical: 1,

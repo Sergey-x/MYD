@@ -1,29 +1,20 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useFocusEffect } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+import MapScreen from "./screens/authorized/MapScreen";
 import ProfileScreen from "./screens/authorized/ProfileScreen";
 import SettingsScreen from "./screens/authorized/SettingsScreen";
-import MapScreen from "./screens/authorized/MapScreen";
 import PlaylistsStackNavigator from "./PlaylistsStackNavigator";
-import UserSvg from "../assets/userSvg";
-import SettingsSvg from "../assets/settingsSvg";
 import MapSvg from "../assets/mapSvg";
 import PlaylistSvg from "../assets/playlistSvg";
+import SettingsSvg from "../assets/settingsSvg";
+import UserSvg from "../assets/userSvg";
 
 
 const Tab = createBottomTabNavigator();
-export const Stack = createNativeStackNavigator();
 
 
 export default function BottomTabNavigator() {
-    useFocusEffect(
-        React.useCallback(() => {
-            return () => {
-            };
-        }, []),
-    );
-
     return (
         <Tab.Navigator
             initialRouteName="Profile"

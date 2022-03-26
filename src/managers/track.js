@@ -1,6 +1,7 @@
 import replaceAllStr from "../utils/replaceAllStr";
 import DB from "../db/db";
 import HitMOApi from "../api/hitmo/hitmo";
+import * as Console from "console";
 
 
 export default class TrackManager {
@@ -10,13 +11,20 @@ export default class TrackManager {
      * @param {string} playlistKind - The kind of the playlist.
      */
     static createNew(mainTrackInfo, playlistKind) {
+        try {
+            var coverLink = `https://${mainTrackInfo.coverUri.split("%%")[0]}/50x50` || "";
+        } catch (e) {
+            console.log(mainTrackInfo.title);
+        }
+
+
         return {
             pk: this.genTrackPK(+mainTrackInfo.id, playlistKind),
             id: +mainTrackInfo.id,
             title: mainTrackInfo.title,
             artistList: mainTrackInfo.artists.map(artist => artist.name),
-            durationMs: +mainTrackInfo.durationMs,
-            imgSrc: `https://${mainTrackInfo.coverUri.split("%%")[0]}/50x50`,
+            durationMs: +mainTrackInfo.durationMs || 0,
+            imgSrc: coverLink,
             playlistKind: playlistKind,
             downloaded: false,
             srcLinks: [],
@@ -97,7 +105,7 @@ export default class TrackManager {
         return {
             key: track.pk,
             pk: track.pk,
-            id: track.pk.id,
+            id: track.id,
             title: this.getTitle(track.title),
             artistList: this.getTruncateArtistsLabel(track.artistList),
             duration: this.getTimeFromMs(track.durationMs),
@@ -106,7 +114,6 @@ export default class TrackManager {
             downloaded: track.downloaded,
             srcLinks: track.srcLinks,
             loading: track.loading,
-            onLoad: track.onLoad || null,
         };
     }
 
@@ -123,6 +130,7 @@ export default class TrackManager {
         const track = DB.tracks.get(trackPk);
         if (track.srcLinks.length && !track.downloaded) {
             // start loading status
+            console.log("start loading");
             DB.tracks.setLoading(trackPk);
             return HitMOApi.load(track).then(() => {
                 // finish loading status

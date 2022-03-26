@@ -8,15 +8,15 @@
 
 
 import React, { useEffect } from "react";
-import { NativeBaseProvider } from "native-base";
-import { NavigationContainer } from "@react-navigation/native";
-import AppNavigations from "./src/components/AppNavigations";
+import { BackHandler, LogBox } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native";
+import { NativeBaseProvider } from "native-base";
+
+import AppNavigations from "./src/components/AppNavigations";
 import { closeDB, openDB } from "./src/db/$realm";
 import { requestWriteExternalStoragePermission } from "./src/permissions/ExternalStorage";
-import { BackHandler, LogBox } from "react-native";
 import DB from "./src/db/db";
-import { IMAGES_PATH } from "./src/localeFiles/documentDirConfig";
 
 
 LogBox.ignoreLogs(["Require cycle:", "Remote debugger"]);
@@ -32,13 +32,11 @@ export default function App() {
     const onCloseApp = () => {
         closeDB();
         BackHandler.exitApp();
-        return true;
     };
 
     useEffect(() => {
         requestWriteExternalStoragePermission().then(onOpenApp);
         const backHandler = BackHandler.addEventListener("hardwareBackPress", onCloseApp);
-        console.log(IMAGES_PATH);
         return () => backHandler.remove();
     }, []);
 

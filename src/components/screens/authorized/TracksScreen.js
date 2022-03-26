@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FlatList } from "react-native";
 import { Button } from "native-base";
+import Queue from "queue-promise";
 
 import DB from "../../../db/db";
 import YmAPI from "../../../api/ym/ym-api";
@@ -8,7 +9,7 @@ import HitMOApi from "../../../api/hitmo/hitmo";
 import SplashScreen from "./SplashScreen";
 import TrackManager from "../../../managers/track";
 import renderTrack from "../../track/renderTrack";
-import Queue from "queue-promise";
+
 
 
 export default function TracksScreen(props) {
@@ -55,14 +56,8 @@ export default function TracksScreen(props) {
     useEffect(() => {
         // set state to the initial value of your realm objects
         const listenTracks = DB.tracks.getByPlaylistKind(playlistKind);
-        setTracks(listenTracks);
-
         listenTracks.addListener(() => {
-            const updTracks = DB.tracks.getByPlaylistKind(playlistKind).map(track => {
-                track.onLoad = (f) => newQueue.enqueue(f);
-                return track;
-            });
-            setTracks(updTracks);
+            setTracks(DB.tracks.getByPlaylistKind(playlistKind));
         });
 
         initTracksData();
@@ -86,13 +81,26 @@ export default function TracksScreen(props) {
     const populateTracksFromApi = () => {
         YmAPI.playlists.getFullPlaylist(playlistKind)
             .then(data => {
-                return data.tracks.map(trackItem => {
+                const loadedTracks = data.tracks.map(trackItem => {
                     const dbTrack = DB.tracks.get(TrackManager.genTrackPK(trackItem.track.id, playlistKind));
                     if (dbTrack) {
                         return dbTrack;
                     }
                     return TrackManager.createNew(trackItem.track, playlistKind);
                 });
+
+
+                // delete removed tracks from DB
+                DB.tracks.getByPlaylistKind(playlistKind).forEach(playlistTrack => {
+                    if (playlistTrack) {
+                        const trackPK = playlistTrack.pk;
+                        if (!loadedTracks.find(elem => elem.pk === trackPK)) {
+                            DB.tracks.delete(trackPK);
+                        }
+                    }
+                });
+
+                return loadedTracks;
             }).then(loadedTracks => {
             // add tracks to DB
             DB.tracks.addMany(loadedTracks);
@@ -100,7 +108,6 @@ export default function TracksScreen(props) {
             return loadedTracks;
         }).then(loadedTracks => {
             // find links for loading
-            const findLinksPromises = [];
             loadedTracks.forEach(track => {
                 if (track.srcLinks.length === 0) {
                     setFindingLinksFlag(true);
@@ -109,7 +116,6 @@ export default function TracksScreen(props) {
                         const trackSearch = TrackManager.getSearchString(track);
                         return HitMOApi.findTrackUrl(trackSearch).then(link => {
                             if (link && link.toString().startsWith("http")) {
-                                DB.tracks.add(track);
                                 DB.tracks.addLink(track.pk, link);
                             }
                         });
@@ -117,33 +123,17 @@ export default function TracksScreen(props) {
                     findLinksQueue.enqueue(promiseLinkFunc);
                 }
             });
-
-            // delete all removed tracks from DB
-            // JSON.parse(JSON.stringify(DB.tracks.getByPlaylistKind(playlistKind))).forEach(playlistTrack => {
-            //     const trackPK = playlistTrack.pk.toString();
-            //     if (!loadedTracks.find(elem => elem.pk.toString() === trackPK)) {
-            //         DB.tracks.delete(trackPK);
-            //     }
-            // });
         });
     };
 
 
     function onLoadTracks() {
-        const oldTracks = tracks.slice().map(track => {
-            track.onLoad = (f) => newQueue.enqueue(f);
-            return track;
-        });
-
-        setTracks(oldTracks);
-
-        oldTracks.forEach(track => {
-            if (track.srcLinks.length && !track.downloaded) {
-                DB.tracks.setLoading(track.pk);
-            }
+        tracks.forEach(track => {
+            newQueue.enqueue(() => {
+                return TrackManager.load(track.pk);
+            });
         });
     }
-
 
     function renderScreen() {
         return (
@@ -159,9 +149,7 @@ export default function TracksScreen(props) {
                 {
                     activeLoadingFlag &&
                     <Button mb={3}
-                            onPress={() => {
-                                newQueue.stop();
-                            }}
+                            onPress={newQueue.stop}
                             borderRadius={0}>
                         Cancel downloading
                     </Button>

@@ -20,7 +20,7 @@ export default function LikesTracksScreen(props) {
     const playlistKind = PlaylistLikesManager.PK;
 
     const findLinksQueue = new Queue({
-        concurrent: 5,
+        concurrent: 3,
         interval: 0,
     });
 
@@ -58,11 +58,6 @@ export default function LikesTracksScreen(props) {
         });
     }, [props.navigation]);
 
-    const updateTracks = (tracks) => {
-        setTracks(tracks);
-        setReadyFlag(true);
-    };
-
     const initTracksData = () => {
         const oldRevision = +(DB.playlistLikes.get().revision);
         YmAPI.tracks.getShortLikesTracks().then(data => {
@@ -70,13 +65,12 @@ export default function LikesTracksScreen(props) {
             if (oldRevision !== newRevision) {
                 // если список обновился
                 const shortTracks = data["result"]["library"]["tracks"];
+                console.log("shortTracks API");
                 populateLikesTracksFromApi(shortTracks).then(() => {
                     DB.playlistLikes.setRevision(newRevision);
                 });
             } else {
-                // если список не менялся
-                // populateLikesTracksFromDb();
-                console.log("Likes DB");
+                console.log("shortTracks DB");
             }
         });
     };
@@ -87,11 +81,8 @@ export default function LikesTracksScreen(props) {
         setTracks(listenTracks);
 
         listenTracks.addListener(() => {
-            const updTracks = DB.tracks.getByPlaylistKind(playlistKind).map(track => {
-                track.onLoad = (f) => loadTracksQueue.enqueue(f);
-                return track;
-            });
-            setTracks(updTracks);
+            setTracks(listenTracks);
+            setReadyFlag(true);
         });
 
         initTracksData();
@@ -102,36 +93,42 @@ export default function LikesTracksScreen(props) {
         };
     }, []);
 
-/*    const populateLikesTracksFromDb = () => {
-        updateTracks(DB.tracks.getByPlaylistKind(playlistKind).filter(item => item));
-        console.log("skip downloading tracks for playlistLikes");
-    };*/
-
     const populateLikesTracksFromApi = (shortTracks) => {
         const fullTracks = [];
-        let fullTrackPromises = [];
+
         shortTracks.forEach(shortTrack => {
             const trackId = shortTrack.id;
-
+            console.log(trackId);
             const dbTrack = DB.tracks.get(TrackManager.genTrackPK(trackId, playlistKind));
             if (dbTrack) {
                 // трек уже присутствует в БД
                 fullTracks.push(dbTrack);
+                setReadyFlag(true);
             } else {
                 // трек новый
-                const fullTrackPromise = YmAPI.tracks.getFullTrack(trackId).then(data => {
+                // const fullTrackPromise = YmAPI.tracks.getFullTrack(trackId).then(data => {
+                YmAPI.tracks.getFullTrack(trackId).then(data => {
                     const trackInfo = data["result"][0];
                     const newTrack = TrackManager.createNew(trackInfo, playlistKind);
                     fullTracks.push(newTrack);
+                    DB.tracks.add(newTrack);
+                    return newTrack;
+                }).then(newTrack => {
+                    if (newTrack.srcLinks.length === 0) {
+                        setFindingLinksFlag(true);
+                        let trackSearch = TrackManager.getSearchString(newTrack);
+                        return HitMOApi.findTrackUrl(trackSearch).then(link => {
+                            if (`${link}`.startsWith("http")) {
+                                DB.tracks.addLink(newTrack.pk, link);
+                            }
+                        });
+                    }
                 });
-                fullTrackPromises.push(fullTrackPromise);
             }
         });
 
         // Когда будут получены все треки - ищем ссылки
-        return Promise.all(fullTrackPromises).then(() => {
-            let findLinksPromises = [];
-
+/*        return Promise.all(fullTrackPromises).then(() => {
             DB.tracks.addMany(fullTracks);
             setReadyFlag(true);
 
@@ -152,21 +149,14 @@ export default function LikesTracksScreen(props) {
                     findLinksQueue.enqueue(findLinkPromiseFunc);
                 }
             });
-        });
+        });*/
     };
 
     function onLoadTracks() {
-        const oldTracks = tracks.slice().map(track => {
-            track.onLoad = (f) => loadTracksQueue.enqueue(f);
-            return track;
-        });
-
-        setTracks(oldTracks);
-
-        oldTracks.forEach(track => {
-            if (track.srcLinks.length && !track.downloaded) {
-                DB.tracks.setLoading(track.pk);
-            }
+        tracks.forEach(track => {
+            loadTracksQueue.enqueue(() => {
+                return TrackManager.load(track.pk);
+            });
         });
     }
 
@@ -200,8 +190,7 @@ export default function LikesTracksScreen(props) {
                 <FlatList
                     data={tracks.map(track => TrackManager.prepared(track))}
                     renderItem={renderTrack}
-                    initialNumToRender={125}
-                    windowSize={10}
+                    initialNumToRender={25}
                     getItemLayout={TrackManager.getItemLayout}
                 />
             </>

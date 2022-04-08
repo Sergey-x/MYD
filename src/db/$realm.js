@@ -9,7 +9,7 @@ import SettingsSchema from "./schemas/settings";
 const REALM_CONF = {
     path: "myrealm",
     schema: [PlaylistSchema, TrackSchema, UserSchema, PlaylistLikesSchema, SettingsSchema],
-    schemaVersion: 43,
+    schemaVersion: 44,
 };
 
 export function openDB() {

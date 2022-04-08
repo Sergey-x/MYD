@@ -1,8 +1,6 @@
 import replaceAllStr from "../utils/replaceAllStr";
 import DB from "../db/db";
 import HitMOApi from "../api/hitmo/hitmo";
-import * as Console from "console";
-
 
 export default class TrackManager {
     /**
@@ -17,7 +15,6 @@ export default class TrackManager {
             console.log(mainTrackInfo.title);
         }
 
-
         return {
             pk: this.genTrackPK(+mainTrackInfo.id, playlistKind),
             id: +mainTrackInfo.id,
@@ -26,7 +23,7 @@ export default class TrackManager {
             durationMs: +mainTrackInfo.durationMs || 0,
             imgSrc: coverLink,
             playlistKind: playlistKind,
-            downloaded: false,
+            // downloaded: false,
             srcLinks: [],
         };
     }
@@ -41,6 +38,8 @@ export default class TrackManager {
     }
 
     static getTimeFromMs(durationMs) {
+        if (durationMs === 0) return "";
+
         const durationS = durationMs / 1000;
         let min = Math.floor(durationS / 60);
         let sec = Math.floor(durationS) % 60;
@@ -101,7 +100,6 @@ export default class TrackManager {
      * @param {object} track - The data object with track fields.
      */
     static prepared(track) {
-        // console.log(track);
         return {
             key: track.pk,
             pk: track.pk,
@@ -112,7 +110,7 @@ export default class TrackManager {
             imgSrc: track.imgSrc,
             playlistKind: track.playlistKind,
             downloaded: track.downloaded,
-            srcLinks: track.srcLinks,
+            srcLinks: track.srcLinks || [],
             loading: track.loading,
         };
     }

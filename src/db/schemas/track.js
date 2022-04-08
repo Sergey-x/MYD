@@ -10,6 +10,7 @@ const TrackSchema = {
         downloaded: {type: 'bool', default: false},
         loading: {type: 'bool', default: false},
         srcLinks: {type: 'list', objectType: 'string', default: []},
+        link: {type: 'string', default: ""},
         imgSrc: {type: 'string', default: ""},
         imgLocalPath: {type: 'string', default: ""},
         playlistKind: {type: 'int'},

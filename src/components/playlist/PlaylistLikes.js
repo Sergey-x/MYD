@@ -1,7 +1,8 @@
 import React from "react";
-import { useNavigation } from "@react-navigation/native";
-import playlist_likes from "../../assets/playlist_likes.png";
 import { Image, Pressable, Text } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+
+import playlist_likes from "../../assets/playlist_likes.png";
 import styles from "./styles";
 
 

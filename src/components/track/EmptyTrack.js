@@ -4,6 +4,7 @@ import { Spinner } from "native-base";
 import FastImage from "react-native-fast-image";
 
 import TrackManager from "../../managers/track";
+import PlaylistSvg from "../svg/playlistSvg";
 
 
 // TODO: optimize spinner
@@ -18,11 +19,16 @@ class EmptyTrack extends React.PureComponent {
                     style={{ flexDirection: "row" }}>
 
                     {/* IMAGE */}
-                    <FastImage
-                        style={styles.emptyTrack.imgCover}
-                        source={{ uri: this.props.imgSrc }}
-                        resizeMode={FastImage.resizeMode.contain}
-                    />
+                    {
+                        (this.props.imgSrc !== "") ?
+                            <FastImage
+                                style={styles.emptyTrack.imgCover}
+                                source={{ uri: this.props.imgSrc }}
+                                resizeMode={FastImage.resizeMode.contain}
+                            /> :
+                            // <Image source={trackStub} style={styles.emptyTrack.imgCover}/>
+                            <PlaylistSvg width={50} />
+                    }
 
                     {/* TITLES */}
                     <Text style={styles.emptyTrack.duration}>

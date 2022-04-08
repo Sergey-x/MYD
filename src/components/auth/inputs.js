@@ -1,10 +1,10 @@
 import React from "react";
 import { Center, Icon, Input } from "native-base";
-import EyeSvg from "../../assets/eyeSvg";
-import EyeOffSvg from "../../assets/eyeOffSvg";
-import KeySvg from "../../assets/KeySvg";
-import EmailSvg from "../../assets/EmailSvg";
-import UserSvg from "../../assets/userSvg";
+import EyeSvg from "../svg/eyeSvg";
+import EyeOffSvg from "../svg/eyeOffSvg";
+import KeySvg from "../svg/KeySvg";
+import EmailSvg from "../svg/EmailSvg";
+import UserSvg from "../svg/userSvg";
 
 
 const MARGIN_BETWEEN_INPUTS = 3;

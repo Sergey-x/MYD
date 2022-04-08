@@ -11,7 +11,6 @@ import TrackManager from "../../../managers/track";
 import renderTrack from "../../track/renderTrack";
 
 
-
 export default function TracksScreen(props) {
     const { playlistKind } = props.route.params;
     const currentPlaylist = DB.playlists.get(playlistKind);
@@ -20,6 +19,7 @@ export default function TracksScreen(props) {
     const [findingLinksFlag, setFindingLinksFlag] = useState(false);
     const [readyFlag, setReadyFlag] = useState(false);
     const [activeLoadingFlag, setActiveLoadingFlag] = useState(false);
+    const [refreshFlatListTrigger, setRefreshFlatListTrigger] = useState(false);
 
     const findLinksQueue = new Queue({
         concurrent: 6,
@@ -42,9 +42,15 @@ export default function TracksScreen(props) {
         interval: 0,
     });
 
-    newQueue.on("start", () => {setActiveLoadingFlag(true)});
-    newQueue.on("end", () => {setActiveLoadingFlag(false)});
-    newQueue.on("stop", () => {setActiveLoadingFlag(false)});
+    newQueue.on("start", () => {
+        setActiveLoadingFlag(true);
+    });
+    newQueue.on("end", () => {
+        setActiveLoadingFlag(false);
+    });
+    newQueue.on("stop", () => {
+        setActiveLoadingFlag(false);
+    });
 
     React.useLayoutEffect(() => {
         // configure header
@@ -70,60 +76,64 @@ export default function TracksScreen(props) {
 
     const initTracksData = () => {
         if (currentPlaylist && currentPlaylist.shouldReload) {
-            populateTracksFromApi();
-            DB.playlists.setLoadedFlag(playlistKind);
+            populateTracksFromApi().then(() => {
+                DB.playlists.setLoadedFlag(playlistKind);
+            });
         } else {
             console.log("skip downloading tracks for playlist " + playlistKind);
             setReadyFlag(true);
         }
     };
 
-    const populateTracksFromApi = () => {
-        YmAPI.playlists.getFullPlaylist(playlistKind)
+    const populateTracksFromApi = async () => {
+        return YmAPI.playlists.getFullPlaylist(playlistKind)
             .then(data => {
+                console.log("GET PLST");
+                console.log("READY");
                 const loadedTracks = data.tracks.map(trackItem => {
-                    const dbTrack = DB.tracks.get(TrackManager.genTrackPK(trackItem.track.id, playlistKind));
-                    if (dbTrack) {
-                        return dbTrack;
-                    }
-                    return TrackManager.createNew(trackItem.track, playlistKind);
+                    const newTrack = TrackManager.createNew(trackItem.track, playlistKind);
+                    // DB.tracks.add(newTrack);
+                    console.log(newTrack.title);
+                    return newTrack;
                 });
+                setTracks(loadedTracks);
+                setReadyFlag(true);
+                setRefreshFlatListTrigger(prevState => !prevState);
 
-
+                // console.log("DB AQDD");
+                // DB.tracks.addMany(loadedTracks);
+                console.log("DEL");
                 // delete removed tracks from DB
-                DB.tracks.getByPlaylistKind(playlistKind).forEach(playlistTrack => {
+/*                DB.tracks.getByPlaylistKind(playlistKind).forEach(playlistTrack => {
                     if (playlistTrack) {
                         const trackPK = playlistTrack.pk;
                         if (!loadedTracks.find(elem => elem.pk === trackPK)) {
                             DB.tracks.delete(trackPK);
                         }
                     }
-                });
+                });*/
 
                 return loadedTracks;
-            }).then(loadedTracks => {
-            // add tracks to DB
-            DB.tracks.addMany(loadedTracks);
-            setReadyFlag(true);
-            return loadedTracks;
-        }).then(loadedTracks => {
-            // find links for loading
-            loadedTracks.forEach(track => {
-                if (track.srcLinks.length === 0) {
-                    setFindingLinksFlag(true);
+            })
+            .then(loadedTracks => {
+                console.log("LINK");
+                // find links for loading
+                loadedTracks.forEach(track => {
+                    if (track.srcLinks.length === 0) {
+                        setFindingLinksFlag(true);
 
-                    const promiseLinkFunc = () => {
-                        const trackSearch = TrackManager.getSearchString(track);
-                        return HitMOApi.findTrackUrl(trackSearch).then(link => {
-                            if (link && link.toString().startsWith("http")) {
-                                DB.tracks.addLink(track.pk, link);
-                            }
-                        });
-                    };
-                    findLinksQueue.enqueue(promiseLinkFunc);
-                }
+                        const promiseLinkFunc = () => {
+                            const trackSearch = TrackManager.getSearchString(track);
+                            return HitMOApi.findTrackUrl(trackSearch).then(link => {
+                                if (link && link.toString().startsWith("http")) {
+                                    DB.tracks.addLink(track.pk, link);
+                                }
+                            });
+                        };
+                        findLinksQueue.enqueue(promiseLinkFunc);
+                    }
+                });
             });
-        });
     };
 
 
@@ -164,6 +174,7 @@ export default function TracksScreen(props) {
                 }
                 <FlatList
                     data={tracks.map(track => TrackManager.prepared(track))}
+                    extraData={refreshFlatListTrigger}
                     renderItem={renderTrack}
                     initialNumToRender={25}
                     getItemLayout={TrackManager.getItemLayout}

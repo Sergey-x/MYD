@@ -5,10 +5,10 @@ import MapScreen from "./screens/authorized/MapScreen";
 import ProfileScreen from "./screens/authorized/ProfileScreen";
 import SettingsScreen from "./screens/authorized/SettingsScreen";
 import PlaylistsStackNavigator from "./PlaylistsStackNavigator";
-import MapSvg from "../assets/mapSvg";
-import PlaylistSvg from "../assets/playlistSvg";
-import SettingsSvg from "../assets/settingsSvg";
-import UserSvg from "../assets/userSvg";
+import MapSvg from "./svg/mapSvg";
+import PlaylistSvg from "./svg/playlistSvg";
+import SettingsSvg from "./svg/settingsSvg";
+import UserSvg from "./svg/userSvg";
 
 
 const Tab = createBottomTabNavigator();

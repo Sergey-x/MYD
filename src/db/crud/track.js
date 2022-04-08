@@ -37,10 +37,6 @@ export default class CrudTrack {
      * */
     static add(track) {
         let createdTrack = null;
-        if (this.get(track.pk)) {
-            return null;
-        }
-
         $realm.write(() => {
             createdTrack = $realm.create(this.schemaName, track, "modified");
         });

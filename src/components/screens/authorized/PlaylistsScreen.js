@@ -43,15 +43,18 @@ export default function PlaylistsScreen() {
 
             // save playlists in DB
             DB.playlists.addMany(dbPlaylists);
-        }).catch(() => {
+        }).catch((e) => {
+            console.log(e);
             populatePlaylistsFromDB();
         });
     };
 
     const initPlaylists = () => {
+
         try {
             populatePlaylistsFromApi();
         } catch (e) {
+            console.log("DB");
             populatePlaylistsFromDB();
         }
     };

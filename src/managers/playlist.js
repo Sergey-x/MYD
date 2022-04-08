@@ -21,12 +21,18 @@ export default class PlaylistManager {
             playlist.shouldReload = (data.modified !== existedPlaylist.modified) || existedPlaylist.shouldReload;
         }
 
-        if (data.cover.uri) {
-            playlist.imgSrc = `https://${data.cover.uri.split("%%")[0]}/${AVATARS_SIZE}x${AVATARS_SIZE}`;
-        } else if (data.cover.itemsUri) {
-            playlist.imgSrc = `https://${data.cover.itemsUri[0].split("%%")[0]}/${AVATARS_SIZE}x${AVATARS_SIZE}`;
+        playlist.imgSrc = "";
+        try {
+            if (data.cover.uri.length) {
+                playlist.imgSrc = `https://${data.cover.uri.split("%%")[0]}/${AVATARS_SIZE}x${AVATARS_SIZE}`;
+            } else if (data.cover.itemsUri) {
+                playlist.imgSrc = `https://${data.cover.itemsUri[0].split("%%")[0]}/${AVATARS_SIZE}x${AVATARS_SIZE}`;
+            }
+        } catch (e) {
+            if (data.cover.itemsUri) {
+                playlist.imgSrc = `https://${data.cover.itemsUri[0].split("%%")[0]}/${AVATARS_SIZE}x${AVATARS_SIZE}`;
+            }
         }
-
         return playlist;
     }
 };

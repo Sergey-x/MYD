@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 import { Button, CheckIcon, Progress, ScrollView, Select, Text, View } from "native-base";
-import { useNavigation } from "@react-navigation/native";
 import { requestWriteExternalStoragePermission } from "../../../permissions/ExternalStorage";
 import Destination from "../../../utils/Destination";
 import { getFSInfo } from "react-native-fs";
@@ -11,7 +10,6 @@ import DB from "../../../db/db";
 
 
 export default function SettingsScreen() {
-    const navigation = useNavigation();
     const [totalSpace, setTotalSpace] = useState(0);
     const [freeSpace, setFreeSpace] = useState(0);
     const [spacePart, setSpacePart] = useState(0);
@@ -72,20 +70,6 @@ export default function SettingsScreen() {
                 <Text color="white" mt={5} fontSize={16}>Current folder:</Text>
                 <Text color="white" mb={5}>{Destination.getPath()}</Text>
 
-                <Button size="md" colorScheme="secondary" onPress={() => {
-                    navigation.navigate("UnauthorizedScreens", { screen: "SignIn" });
-                }}>
-                    LOGOUT
-                </Button>
-
-                {/*                <Button mt={2} size="md" colorScheme="secondary" onPress={DB.tracks.delAll}>
-                    CLEAR TRACKS
-                </Button>
-
-                <Button mt={2} size="md" colorScheme="secondary" onPress={DB.playlists.delAll}>
-                    CLEAR PLAYLISTS
-                </Button>
-*/}
                 <Button mt={2} size="md" colorScheme="secondary" onPress={clearDB}>
                     CLEAR ALL
                 </Button>

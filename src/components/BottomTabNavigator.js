@@ -1,11 +1,8 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-
-import MapScreen from "./screens/authorized/MapScreen";
 import ProfileScreen from "./screens/authorized/ProfileScreen";
 import SettingsScreen from "./screens/authorized/SettingsScreen";
 import PlaylistsStackNavigator from "./PlaylistsStackNavigator";
-import MapSvg from "./svg/mapSvg";
 import PlaylistSvg from "./svg/playlistSvg";
 import SettingsSvg from "./svg/settingsSvg";
 import UserSvg from "./svg/userSvg";
@@ -18,7 +15,6 @@ export default function BottomTabNavigator() {
     return (
         <Tab.Navigator
             initialRouteName="Profile"
-            // initialRouteName="PlaylistsStackScreen"
             screenOptions={{
                 tabBarActiveTintColor: "#ea2264",
                 headerShown: false,
@@ -38,15 +34,6 @@ export default function BottomTabNavigator() {
                         options={{
                             tabBarLabel: "Playlists",
                             tabBarIcon: () => <PlaylistSvg />,
-                        }}
-            />
-
-            <Tab.Screen name="Map"
-                        component={MapScreen}
-                        options={{
-                            tabBarLabel: "Map",
-                            headerShown: true,
-                            tabBarIcon: () => <MapSvg />,
                         }}
             />
 
